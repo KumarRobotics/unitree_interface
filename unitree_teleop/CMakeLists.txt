@@ -11,17 +11,27 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(unitree_api REQUIRED)
+find_package(unitree_go REQUIRED)
 
 # Include directories
 include_directories(include)
 
 # Create executable
-add_executable(unitree_teleop src/unitree_teleop.cpp)
+add_executable(unitree_teleop 
+  src/unitree_teleop.cpp
+  src/common/ros2_sport_client.cpp
+)
+
+target_compile_features(unitree_teleop PRIVATE cxx_std_20)
+
 ament_target_dependencies(unitree_teleop
   rclcpp
   geometry_msgs
   sensor_msgs
   std_msgs
+  unitree_api
+  unitree_go
 )
 
 # Install executable
