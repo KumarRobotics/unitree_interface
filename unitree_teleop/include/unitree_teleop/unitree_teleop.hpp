@@ -16,28 +16,25 @@ public:
     UnitreeTeleop();
 
 private:
+    // callback functions
     void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg);
     void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
-    void pub_callback();
-    void high_state_handler(const unitree_go::msg::SportModeState::SharedPtr msg);
-    void get_init_state();
 
-    // Publishers and subscribers
+    // publishers and subscribers
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
     rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr highstate_sub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr is_auto_pub_;
-    
-    // Timer
-    rclcpp::TimerBase::SharedPtr pub_timer_;
 
-    // Sport client for robot communication
+    // sport client for robot commands
     SportClient sport_client_;
     unitree_api::msg::Request req_;
 
-    // State variables
+    // state variables
     geometry_msgs::msg::Twist twist_buf_;
     bool is_auto_;
+    bool sit_transition_;
+    bool is_armed_;
 };
 
 #endif  // UNITREE_TELEOP_HPP_

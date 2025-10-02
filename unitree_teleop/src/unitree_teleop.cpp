@@ -4,7 +4,9 @@ UnitreeTeleop::UnitreeTeleop()
     : Node("unitree_teleop"),
       sport_client_(this),
       twist_buf_(),
-      is_auto_(false)
+      is_auto_(false),
+      sit_transition_(false),
+      is_armed_(false)
 {
     // subscribe to joy
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
@@ -16,7 +18,6 @@ UnitreeTeleop::UnitreeTeleop()
         "twist_auto", 
         10,
         std::bind(&UnitreeTeleop::twist_callback, this, std::placeholders::_1));
-    
     // publisher for auto flag
     is_auto_pub_ = this->create_publisher<std_msgs::msg::Bool>(
         "~/is_auto", 
@@ -27,11 +28,43 @@ UnitreeTeleop::UnitreeTeleop()
 
 void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 {
+    // auto axis 4
+    // publish auto flag
+    auto is_auto_msg = std_msgs::msg::Bool();
+    is_auto_msg.data = is_auto_;
+    is_auto_pub_->publish(is_auto_msg);
+    
+    // arm axis 6
+    int damp_axis = msg->axes[6];
+    if (damp_axis < 0)
+    {
+        if (!is_armed_)
+        {
+            is_armed_ = true;
+            sport_client_.BalanceStand(req_);
+        }
+    }
+    else if (damp_axis == 0)
+    {
+        is_armed_ = false;
+        sport_client_.StandUp(req_);
+    }
+    else if (damp_axis > 0)
+    {
+        is_armed_ = false;
+        sport_client_.StandDown(req_);
+    }
+
+    if (!is_armed_)
+    {
+        return;
+    }
+
     // map joystick axes to twist
     // left stick vertical    (axis 0) -> ignored
     // left stick horizontal  (axis 1) -> linear.y  (strafe left/right) [-1, 1]
+    // right stick horizontal (axis 2) -> angular.z (turn left/right)   [-1, 1]
     // right stick vertical   (axis 3) -> linear.x  (forward/backward)  [-1, 1]
-    // right stick horizontal (axis 2) -> angular.z (turn left/right)   [-1, 1]    
     
     // linear velocity
     float right_vert_axis = msg->axes[3];
@@ -56,22 +89,34 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 
     is_auto_ = msg->axes[4] > 0.0;
 
-    // publish auto flag
-    auto is_auto_msg = std_msgs::msg::Bool();
-    is_auto_msg.data = is_auto_;
-    is_auto_pub_->publish(is_auto_msg);
-    
     if (!is_auto_)
     {
         // only send teleop cmd when we receive joystick input
         sport_client_.Move(req_, twist_buf_.linear.x, twist_buf_.linear.y, twist_buf_.angular.z);
+    }
+
+    // stand up/down axis 5
+    int sit_axis = msg->axes[5];
+    if (sit_axis == 0)
+    {
+        sit_transition_ = true;
+    }
+    if (sit_axis > 0 && sit_transition_)
+    {
+        sport_client_.StandDown(req_);
+        sit_transition_ = false;
+    }
+    else if (sit_axis < 0 && sit_transition_)
+    {
+        sport_client_.StandUp(req_);
+        sit_transition_ = false;
     }
 }
 
 void UnitreeTeleop::twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg)
 {
     // forward twist cmd when in auto mode
-    if (is_auto_)
+    if (is_auto_ && is_armed_)
     {
         sport_client_.Move(req_, msg->linear.x, msg->linear.y, msg->angular.z);
     }
