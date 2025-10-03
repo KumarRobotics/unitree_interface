@@ -35,21 +35,21 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     is_auto_pub_->publish(is_auto_msg);
     
     // arm axis 6
-    int damp_axis = msg->axes[6];
-    if (damp_axis < 0)
+    int arming_axis = msg->axes[6];
+    if (arming_axis < 0)
     {
         if (!is_armed_)
-        {
+	{
             is_armed_ = true;
             sport_client_.BalanceStand(req_);
         }
     }
-    else if (damp_axis == 0)
+    else if (arming_axis == 0)
     {
         is_armed_ = false;
         sport_client_.StandUp(req_);
     }
-    else if (damp_axis > 0)
+    else if (arming_axis > 0)
     {
         is_armed_ = false;
         sport_client_.StandDown(req_);
