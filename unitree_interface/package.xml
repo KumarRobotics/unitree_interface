@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>unitree_interface</name>
+  <version>0.0.0</version>
+  <description>Unitree interface utilities and launches</description>
+  <maintainer email="user@example.com">user</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>launch</depend>
+  <depend>launch_ros</depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

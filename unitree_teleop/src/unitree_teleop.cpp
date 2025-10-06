@@ -39,7 +39,7 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     if (arming_axis < 0)
     {
         if (!is_armed_)
-	{
+	    {
             is_armed_ = true;
             sport_client_.BalanceStand(req_);
         }
@@ -57,6 +57,7 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
 
     if (!is_armed_)
     {
+        // we don't send any vel cmds when not armed
         return;
     }
 
