@@ -26,3 +26,13 @@ nmcli connection modify os_eth ipv4.dns 8.8.8.8
 nmcli connection modify os_eth ipv4.method manual
 nmcli connection up os_eth
 ```
+
+## Launch
+1. Launch unitree_teleop
+```
+ros2 launch unitree_teleop unitree_teleop_cyclonedds.launch.py
+```
+2. Launch Ouster and LIO
+```
+ros2 launch unitree_interface ouster128_rko_lio.launch.py
+```
