@@ -6,7 +6,8 @@ UnitreeTeleop::UnitreeTeleop()
       twist_buf_(),
       is_auto_(false),
       sit_transition_(false),
-      is_armed_(false)
+      is_armed_(false),
+      gait_type_(0)
 {
     // subscribe to joy
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
@@ -61,6 +62,36 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
         return;
     }
 
+    // set gait
+    int gait_axis = msg->axes[5];
+    if (gait_axis == 1)
+    {
+        // regular
+        if (gait_type_ != 0)
+        {
+            sport_client_.SetGait(req_, 0);
+            gait_type_ = 0;
+        }
+    }
+    else if (gait_axis == 0)
+    {
+        // climb
+        if (gait_type_ != 2)
+        {
+            sport_client_.SetGait(req_, 2);
+            gait_type_ = 2;
+        }
+    }
+    else if (gait_axis == -1)
+    {
+        // terrain
+        if (gait_type_ != 1)
+        {
+            sport_client_.SetGait(req_, 1);
+            gait_type_ = 1;
+        }
+    }
+    
     // map joystick axes to twist
     // left stick vertical    (axis 0) -> ignored
     // left stick horizontal  (axis 1) -> linear.y  (strafe left/right) [-1, 1]
@@ -68,7 +99,7 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     // right stick vertical   (axis 3) -> linear.x  (forward/backward)  [-1, 1]
 
     // get max velocity from axis 0 -- map [1.0,-1.0] to [1.0, 2.5]
-    float max_linear_vel_x = (-msg->axes[0] + 1.0) / 2.0 * 1.5 + 1.0;
+    float max_linear_vel_x = (-msg->axes[0] + 1.0) + 0.5;
     
     // linear velocity
     float right_vert_axis = msg->axes[3];
@@ -96,23 +127,6 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     {
         // only send teleop cmd when we receive joystick input
         sport_client_.Move(req_, twist_buf_.linear.x, twist_buf_.linear.y, twist_buf_.angular.z);
-    }
-
-    // stand up/down axis 5
-    int sit_axis = msg->axes[5];
-    if (sit_axis == 0)
-    {
-        sit_transition_ = true;
-    }
-    if (sit_axis > 0 && sit_transition_)
-    {
-        sport_client_.StandDown(req_);
-        sit_transition_ = false;
-    }
-    else if (sit_axis < 0 && sit_transition_)
-    {
-        sport_client_.StandUp(req_);
-        sit_transition_ = false;
     }
 }
 

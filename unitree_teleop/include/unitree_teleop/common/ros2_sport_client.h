@@ -49,6 +49,7 @@ const int32_t ROBOT_SPORT_API_ID_CROSSSTEP = 2051;
 const int32_t ROBOT_SPORT_API_ID_AUTORECOVERY_SET = 2054;
 const int32_t ROBOT_SPORT_API_ID_AUTORECOVERY_GET = 2055;
 const int32_t ROBOT_SPORT_API_ID_SWITCHAVOIDMODE = 2058;
+const int32_t ROBOT_SPORT_API_ID_SETGAIT = 1011;
 
 #pragma pack(1)
 struct PathPoint {
@@ -93,6 +94,12 @@ class SportClient {
     req_suber_.reset();
     return js;
   }
+
+  /*
+   * @brief SetGait
+   * @api: 1011
+   */
+  void SetGait(unitree_api::msg::Request &req, int gait_type);
 
   /*
    * @brief Damp

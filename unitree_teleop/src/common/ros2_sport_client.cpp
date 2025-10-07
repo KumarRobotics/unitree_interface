@@ -3,6 +3,13 @@
 ***********************************************************************/
 #include "unitree_teleop/common/ros2_sport_client.h"
 
+void SportClient::SetGait(unitree_api::msg::Request &req, int gait_type) {
+  nlohmann::json js;
+  js["data"] = gait_type;
+  req.parameter = js.dump();
+  req.header.identity.api_id = ROBOT_SPORT_API_ID_SETGAIT;
+  req_puber_->publish(req);
+}
 void SportClient::Damp(unitree_api::msg::Request &req) {
   req.header.identity.api_id = ROBOT_SPORT_API_ID_DAMP;
   req_puber_->publish(req);

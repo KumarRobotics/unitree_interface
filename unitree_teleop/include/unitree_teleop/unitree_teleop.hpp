@@ -23,8 +23,8 @@ private:
     // publishers and subscribers
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
-    rclcpp::Subscription<unitree_go::msg::SportModeState>::SharedPtr highstate_sub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr is_auto_pub_;
+    rclcpp::Publisher<unitree_go::msg::SportModeState>::SharedPtr state_pub_;
 
     // sport client for robot commands
     SportClient sport_client_;
@@ -35,6 +35,7 @@ private:
     bool is_auto_;
     bool sit_transition_;
     bool is_armed_;
+    int gait_type_;
 };
 
 #endif  // UNITREE_TELEOP_HPP_
