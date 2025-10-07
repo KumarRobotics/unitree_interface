@@ -66,10 +66,12 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     // left stick horizontal  (axis 1) -> linear.y  (strafe left/right) [-1, 1]
     // right stick horizontal (axis 2) -> angular.z (turn left/right)   [-1, 1]
     // right stick vertical   (axis 3) -> linear.x  (forward/backward)  [-1, 1]
+
+    // get max velocity from axis 0 -- map [1.0,-1.0] to [1.0, 2.5]
+    float max_linear_vel_x = (-msg->axes[0] + 1.0) / 2.0 * 1.5 + 1.0;
     
     // linear velocity
     float right_vert_axis = msg->axes[3];
-    float max_linear_vel_x = 1.0;
     float linear_vel_x = right_vert_axis * max_linear_vel_x;
 
     float left_horiz_axis = msg->axes[1];
