@@ -91,6 +91,8 @@ def generate_launch_description():
         plugin='rosbag2_composable_recorder::ComposableRecorder',
         name="recorder",
         parameters=[{'topics': [
+                "/ouster/points",
+                "/ouster/imu",
                 "/rko_lio/odometry",
                 "/rko_lio/local_map",
                 ],
@@ -99,7 +101,7 @@ def generate_launch_description():
                     'disable_discovery': False,
                     'serialization_format': 'cdr',
                     'start_recording_immediately': False,
-                    "bag_prefix": '/root/unitree_ws/bags/rko_'}],
+                    "bag_prefix": '/bags/ugv_'}],
         remappings=[],
         extra_arguments=[{'use_intra_process_comms': True}],
     )
