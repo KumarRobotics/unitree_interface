@@ -115,8 +115,7 @@ def generate_launch_description():
 
     # Set CycloneDDS URI and RMW implementation environment variables
     cyclonedds_uri_env = SetEnvironmentVariable(
-        'CYCLONEDDS_URI', '/root/agx_cyclonedds.xml',
-        # 'CYCLONEDDS_URI', '/root/agx_cyclonedds.xml'
+        'CYCLONEDDS_URI', '/root/ugv_exp_ws/src/unitree_interface/unitree_teleop/unitree_cyclonedds.xml',
     )
     rmw_implementation_env = SetEnvironmentVariable(
         'RMW_IMPLEMENTATION', 'rmw_cyclonedds_cpp'
