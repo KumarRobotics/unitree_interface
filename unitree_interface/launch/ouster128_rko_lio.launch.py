@@ -69,13 +69,13 @@ def generate_launch_description():
 
                 # frames & behavior
                 'rviz': False,
-                'base_frame': 'os_lidar',
+                'base_frame': 'base_link',
                 'odom_frame': 'odom',
                 'deskew': True,
                 'lidar_frame': 'os_lidar',
                 'imu_frame': 'os_imu',
-                'extrinsic_lidar2base_quat_xyzw_xyz': [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-                'extrinsic_imu2base_quat_xyzw_xyz':  [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+                'extrinsic_lidar2base_quat_xyzw_xyz': [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                'extrinsic_imu2base_quat_xyzw_xyz':  [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
                 'publish_local_map': True,
                 'publish_map_after': 1.0,
                 'publish_lidar_acceleration': False,
