@@ -30,7 +30,7 @@ def generate_launch_description():
         description='Parameters file for Ouster components'
     )
     ouster_ns_arg = DeclareLaunchArgument('ouster_ns', default_value='ouster')
-    rviz_enable_arg = DeclareLaunchArgument('viz', default_value='True')
+    rviz_enable_arg = DeclareLaunchArgument('viz', default_value='False')
     auto_start_arg = DeclareLaunchArgument('auto_start', default_value='True')
 
     # Bag args (optional)
@@ -38,12 +38,19 @@ def generate_launch_description():
     record_all_arg = DeclareLaunchArgument('record_all', default_value='True')
 
     # --- Ouster components ---
+    sensor_hostname_arg = DeclareLaunchArgument(
+        'sensor_hostname', 
+        default_value='192.168.100.12',
+        description='Ouster sensor hostname or IP address'
+    )
+    sensor_hostname = LaunchConfiguration('sensor_hostname')
     os_sensor = ComposableNode(
         package='ouster_ros',
         plugin='ouster_ros::OusterSensor',
         name='os_sensor',
         namespace=ouster_ns,
-        parameters=[params_file, {'auto_start': auto_start}],
+        parameters=[params_file, {'auto_start': auto_start,
+                                  'sensor_hostname': sensor_hostname}],
     )
 
     os_cloud = ComposableNode(
@@ -129,7 +136,7 @@ def generate_launch_description():
     )
 
     return launch.LaunchDescription([
-        params_file_arg, ouster_ns_arg, rviz_enable_arg, auto_start_arg,
+        params_file_arg, ouster_ns_arg, rviz_enable_arg, auto_start_arg, sensor_hostname_arg,
         bag_dir_arg, record_all_arg,
         rviz_launch,
         os_container,
