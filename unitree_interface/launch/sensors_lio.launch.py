@@ -36,7 +36,6 @@ def launch_setup(context, *args, **kwargs):
     # Launch configurations
     params_file = LaunchConfiguration('params_file')
     ouster_ns = LaunchConfiguration('ouster_ns')
-    rviz_enable = LaunchConfiguration('viz')
     auto_start = LaunchConfiguration('auto_start')
     sensor_hostname = LaunchConfiguration('sensor_hostname')
 
@@ -78,8 +77,7 @@ def launch_setup(context, *args, **kwargs):
         namespace=ouster_ns,
         parameters=[params_file, {'auto_start': auto_start,
                                   'sensor_hostname': sensor_hostname,
-                                  'timestamp_mode': 'TIME_FROM_ROS_TIME',
-                                  'use_ros_time': True}],
+                                  'timestamp_mode': 'TIME_FROM_PTP_1588'}],
     )
 
     os_cloud = ComposableNode(
@@ -87,8 +85,7 @@ def launch_setup(context, *args, **kwargs):
         plugin='ouster_ros::OusterCloud',
         name='os_cloud',
         namespace=ouster_ns,
-        parameters=[params_file, {'timestamp_mode': 'TIME_FROM_ROS_TIME',
-                                  'use_ros_time': True}],
+        parameters=[params_file, {'timestamp_mode': 'TIME_FROM_PTP_1588'}],
     )
     
     # --- RKO LIO (no namespace so topics below are global like /ouster/imu) ---
@@ -100,14 +97,12 @@ def launch_setup(context, *args, **kwargs):
         parameters=[
             params_file,  # keep if your node reads general params from it
             {
-                # match producer topics from Ouster under /ouster/*
-                'imu_topic':   'ouster/imu',     # resolves to /ouster/imu
-                'lidar_topic': 'ouster/points',  # resolves to /ouster/points
+                'imu_topic':   'ouster/imu',
+                'lidar_topic': 'ouster/points',
                 # output topics
                 'map_topic': '/ugv/rko_lio/local_map',
                 'odom_topic': '/ugv/rko_lio/odometry',
                 # frames & behavior
-                'rviz': False,
                 'base_frame': 'base_link',
                 'odom_frame': 'odom',
                 'deskew': True,
@@ -124,7 +119,7 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
-    # --- rosbag2 Recorder (Jazzy component) ---
+    # rosbag recorder
     recorder = ComposableNode(
         package='rosbag2_composable_recorder',
         plugin='rosbag2_composable_recorder::ComposableRecorder',
@@ -153,7 +148,7 @@ def launch_setup(context, *args, **kwargs):
         extra_arguments=[{'use_intra_process_comms': True}],
     )
 
-    # --- Container (shared between Ouster and ZED) ---
+    # unified container
     container_name = 'ugv_container'
 
     ugv_container = ComposableNodeContainer(
@@ -171,9 +166,7 @@ def launch_setup(context, *args, **kwargs):
     )
     actions.append(ugv_container)
 
-    # --- ZED Multi Camera Setup ---
-    # ZED nodes will be in the same namespace as the container (ouster)
-    # Each camera will have its own sub-namespace under ouster
+    # zed multi-camera
     cam_idx = 0
     for name in names_arr:
         model = models_arr[cam_idx]
@@ -187,15 +180,12 @@ def launch_setup(context, *args, **kwargs):
             info += ', id: ' + cam_id
         info += ')'
         actions.append(LogInfo(msg=TextSubstitution(text=info)))
-
-        # Only the first camera sends odom and map TF
+        
         publish_tf = 'false'
         if cam_idx == 0:
             if disable_tf_val.lower() == 'false':
                 publish_tf = 'true'
-
-        # Include ZED camera launch for each camera
-        # Use the same namespace as container so the full container path is constructed correctly
+        
         zed_wrapper_launch = IncludeLaunchDescription(
             launch_description_source=PythonLaunchDescriptionSource([
                 zed_wrapper_pkg_dir, '/launch/zed_camera.launch.py'
@@ -214,13 +204,12 @@ def launch_setup(context, *args, **kwargs):
         actions.append(zed_wrapper_launch)
 
         cam_idx += 1
-
-    # Create the Xacro command with correct camera names
+    
     xacro_command = ['xacro ', multi_zed_xacro_path, ' ']
     for idx, name in enumerate(names_arr):
         xacro_command.append('camera_name_' + str(idx) + ':=' + name + ' ')
 
-    # Robot State Publisher node for multi-camera setup
+    # robot state publisher node for multi-camera setup
     rsp_name = 'zed_state_publisher'
     info = '* Starting robot_state_publisher node for ZED multi-camera: ' + rsp_name
     actions.append(LogInfo(msg=TextSubstitution(text=info)))
@@ -236,14 +225,6 @@ def launch_setup(context, *args, **kwargs):
         }]
     )
     actions.append(multi_rsp_node)
-
-    # Optional RViz
-    rviz_launch_file_path = Path(ouster_ros_pkg_dir) / 'launch' / 'rviz.launch.py'
-    rviz_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([str(rviz_launch_file_path)]),
-        condition=IfCondition(rviz_enable),
-    )
-    actions.append(rviz_launch)
 
     return actions
 
