@@ -14,7 +14,7 @@ def generate_launch_description():
     
     cmd_vel_topic_arg = DeclareLaunchArgument(
         'cmd_vel_topic',
-        default_value='/cmd_vel',
+        default_value='/tracker_cmd',
         description='Command velocity topic name'
     )
     
@@ -36,7 +36,7 @@ def generate_launch_description():
         executable='unitree_teleop_ros2',
         name='unitree_teleop_ros2',
         remappings=[
-            ('twist_out', LaunchConfiguration('cmd_vel_topic'))
+            ('twist_auto', LaunchConfiguration('cmd_vel_topic'))
         ],
         parameters=[{
             'use_sim_time': False

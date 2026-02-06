@@ -13,13 +13,13 @@ def generate_launch_description():
     
     cmd_vel_topic_arg = DeclareLaunchArgument(
         'cmd_vel_topic',
-        default_value='/cmd_vel',
+        default_value='/tracker_cmd',
         description='Command velocity topic name'
     )
     
     # Set CycloneDDS URI and RMW implementation environment variables
     cyclonedds_uri_env = SetEnvironmentVariable(
-        'CYCLONEDDS_URI', '/root/unitree_cyclonedds.xml'
+        'CYCLONEDDS_URI', '/root/ugv_exp_ws/src/unitree_interface/unitree_teleop_ros2/unitree_teleop_ros2_cyclonedds.xml'
     )
     rmw_implementation_env = SetEnvironmentVariable(
         'RMW_IMPLEMENTATION', 'rmw_cyclonedds_cpp'
@@ -38,12 +38,12 @@ def generate_launch_description():
     )
     
     # Unitree teleop node
-    unitree_teleop_node = Node(
-        package='unitree_teleop',
-        executable='unitree_teleop',
-        name='unitree_teleop',
+    unitree_teleop_ros2_node = Node(
+        package='unitree_teleop_ros2',
+        executable='unitree_teleop_ros2',
+        name='unitree_teleop_ros2',
         remappings=[
-            ('twist_out', LaunchConfiguration('cmd_vel_topic'))
+            ('twist_auto', LaunchConfiguration('cmd_vel_topic'))
         ],
         parameters=[{
             'use_sim_time': False
@@ -56,5 +56,5 @@ def generate_launch_description():
         cyclonedds_uri_env,
         rmw_implementation_env,
         joy_node,
-        unitree_teleop_node
+        unitree_teleop_ros2_node
     ])
