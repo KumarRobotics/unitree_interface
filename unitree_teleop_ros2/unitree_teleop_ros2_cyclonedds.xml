@@ -3,7 +3,7 @@
     <Domain Id="0">
         <General>
             <Interfaces>
-                <NetworkInterface name="eno1" priority="default" multicast="default" />
+                <NetworkInterface name="enx0c379623c0ae" priority="default" multicast="default" />
             </Interfaces>
         </General>
     </Domain>

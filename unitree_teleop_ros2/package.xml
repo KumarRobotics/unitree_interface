@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>unitree_teleop</name>
+  <name>unitree_teleop_ros2</name>
   <version>1.0.0</version>
-  <description>Teleop package for Unitree Go2W using unitree_sdk2 with joystick control and autonomous mode switching</description>
+  <description>Teleop package for Unitree robots with joystick control and autonomous mode switching</description>
 
   <maintainer email="dexterong94@gmail.com">Dexter Ong</maintainer>
 
@@ -16,9 +16,14 @@
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>unitree_api</depend>
+  <depend>unitree_go</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_cpplint</test_depend>
+  <test_depend>ament_cppcheck</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

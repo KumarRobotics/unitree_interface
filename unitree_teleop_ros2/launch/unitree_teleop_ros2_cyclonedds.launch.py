@@ -1,8 +1,7 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
-
 
 def generate_launch_description():
     # Declare launch arguments
@@ -11,19 +10,21 @@ def generate_launch_description():
         default_value='/dev/input/js0',
         description='Joystick device path'
     )
-
+    
     cmd_vel_topic_arg = DeclareLaunchArgument(
         'cmd_vel_topic',
         default_value='/tracker_cmd',
         description='Command velocity topic name'
     )
-
-    network_interface_arg = DeclareLaunchArgument(
-        'network_interface',
-        default_value='enx0c379623c0ae',
-        description='Network interface for unitree_sdk2 DDS communication'
+    
+    # Set CycloneDDS URI and RMW implementation environment variables
+    cyclonedds_uri_env = SetEnvironmentVariable(
+        'CYCLONEDDS_URI', '/root/ugv_exp_ws/src/unitree_interface/unitree_teleop_ros2/unitree_teleop_ros2_cyclonedds.xml'
     )
-
+    rmw_implementation_env = SetEnvironmentVariable(
+        'RMW_IMPLEMENTATION', 'rmw_cyclonedds_cpp'
+    )
+    
     # Joy node
     joy_node = Node(
         package='joy',
@@ -36,24 +37,24 @@ def generate_launch_description():
         }]
     )
     
-    # Unitree teleop node (using unitree_sdk2)
-    unitree_teleop_node = Node(
-        package='unitree_teleop',
-        executable='unitree_teleop',
-        name='unitree_teleop',
+    # Unitree teleop node
+    unitree_teleop_ros2_node = Node(
+        package='unitree_teleop_ros2',
+        executable='unitree_teleop_ros2',
+        name='unitree_teleop_ros2',
         remappings=[
             ('twist_auto', LaunchConfiguration('cmd_vel_topic'))
         ],
         parameters=[{
-            'use_sim_time': False,
-            'network_interface': LaunchConfiguration('network_interface'),
+            'use_sim_time': False
         }]
     )
-
+    
     return LaunchDescription([
         joy_dev_arg,
         cmd_vel_topic_arg,
-        network_interface_arg,
+        cyclonedds_uri_env,
+        rmw_implementation_env,
         joy_node,
-        unitree_teleop_node
+        unitree_teleop_ros2_node
     ])
