@@ -32,9 +32,9 @@ def generate_launch_description():
     
     # Unitree teleop node
     unitree_teleop_node = Node(
-        package='unitree_teleop',
-        executable='unitree_teleop',
-        name='unitree_teleop',
+        package='unitree_teleop_ros2',
+        executable='unitree_teleop_ros2',
+        name='unitree_teleop_ros2',
         remappings=[
             ('twist_out', LaunchConfiguration('cmd_vel_topic'))
         ],

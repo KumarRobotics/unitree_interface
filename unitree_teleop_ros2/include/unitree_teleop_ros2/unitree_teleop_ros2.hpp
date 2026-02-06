@@ -8,7 +8,7 @@
 #include <thread>
 #include "unitree_api/msg/request.hpp"
 #include "unitree_go/msg/sport_mode_state.hpp"
-#include "unitree_teleop/common/ros2_sport_client.h"
+#include "unitree_teleop_ros2/common/ros2_sport_client.h"
 
 class UnitreeTeleop : public rclcpp::Node
 {

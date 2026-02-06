@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>unitree_teleop</name>
+  <name>unitree_teleop_ros2</name>
   <version>1.0.0</version>
   <description>Teleop package for Unitree robots with joystick control and autonomous mode switching</description>
 

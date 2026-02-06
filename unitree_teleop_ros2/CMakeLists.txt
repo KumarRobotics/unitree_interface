@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(unitree_teleop)
+project(unitree_teleop_ros2)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -18,14 +18,14 @@ find_package(unitree_go REQUIRED)
 include_directories(include)
 
 # Create executable
-add_executable(unitree_teleop 
-  src/unitree_teleop.cpp
+add_executable(unitree_teleop_ros2 
+  src/unitree_teleop_ros2.cpp
   src/common/ros2_sport_client.cpp
 )
 
-target_compile_features(unitree_teleop PRIVATE cxx_std_20)
+target_compile_features(unitree_teleop_ros2 PRIVATE cxx_std_20)
 
-ament_target_dependencies(unitree_teleop
+ament_target_dependencies(unitree_teleop_ros2
   rclcpp
   geometry_msgs
   sensor_msgs
@@ -36,7 +36,7 @@ ament_target_dependencies(unitree_teleop
 
 # Install executable
 install(TARGETS
-  unitree_teleop
+  unitree_teleop_ros2
   DESTINATION lib/${PROJECT_NAME}
 )
 
