@@ -1,4 +1,5 @@
 #include "unitree_teleop/unitree_teleop.hpp"
+#include <unitree/robot/channel/channel_factory.hpp>
 
 UnitreeTeleop::UnitreeTeleop()
     : Node("unitree_teleop"),
@@ -10,15 +11,16 @@ UnitreeTeleop::UnitreeTeleop()
 {
     // Declare and get parameters
     this->declare_parameter<std::string>("network_interface", "eth0");
-    network_interface_ = this->get_parameter("network_interface").as_string();
+    std::string network_interface = this->get_parameter("network_interface").as_string();
 
     // Initialize unitree_sdk2 DDS channel
-    RCLCPP_INFO(this->get_logger(), "Initializing unitree_sdk2 ChannelFactory on interface: %s", network_interface_.c_str());
-    unitree::robot::ChannelFactory::Instance()->Init(0, network_interface_);
+    RCLCPP_INFO(this->get_logger(), "Initializing unitree_sdk2 ChannelFactory on interface: %s", network_interface.c_str());
+    unitree::robot::ChannelFactory::Instance()->Init(0, network_interface);
 
-    // Initialize sport client
-    sport_client_.SetTimeout(10.0f);
-    sport_client_.Init();
+    // Initialize sport client (ChannelFactory must be initialized first)
+    sport_client_ = std::make_unique<SportClientExt>();
+    sport_client_->SetTimeout(10.0f);
+    sport_client_->Init();
 
     // Subscribe to joy
     joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
@@ -56,20 +58,20 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
         if (!is_armed_)
         {
             is_armed_ = true;
-            int32_t ret = sport_client_.BalanceStand();
+            int32_t ret = sport_client_->BalanceStand();
             RCLCPP_INFO(this->get_logger(), "BalanceStand: %d", ret);
         }
     }
     else if (arming_axis == 0)
     {
         is_armed_ = false;
-        int32_t ret = sport_client_.StandUp();
+        int32_t ret = sport_client_->StandUp();
         RCLCPP_DEBUG(this->get_logger(), "StandUp: %d", ret);
     }
     else if (arming_axis > 0)
     {
         is_armed_ = false;
-        int32_t ret = sport_client_.StandDown();
+        int32_t ret = sport_client_->StandDown();
         RCLCPP_DEBUG(this->get_logger(), "StandDown: %d", ret);
     }
 
@@ -86,7 +88,7 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
         // Regular gait
         if (gait_type_ != 0)
         {
-            int32_t ret = sport_client_.SetGait(0);
+            int32_t ret = sport_client_->SetGait(0);
             gait_type_ = 0;
             RCLCPP_INFO(this->get_logger(), "SetGait(0) regular: %d", ret);
         }
@@ -96,7 +98,7 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
         // Climb gait
         if (gait_type_ != 2)
         {
-            int32_t ret = sport_client_.SetGait(2);
+            int32_t ret = sport_client_->SetGait(2);
             gait_type_ = 2;
             RCLCPP_INFO(this->get_logger(), "SetGait(2) climb: %d", ret);
         }
@@ -106,7 +108,7 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
         // Terrain gait
         if (gait_type_ != 1)
         {
-            int32_t ret = sport_client_.SetGait(1);
+            int32_t ret = sport_client_->SetGait(1);
             gait_type_ = 1;
             RCLCPP_INFO(this->get_logger(), "SetGait(1) terrain: %d", ret);
         }
@@ -146,7 +148,7 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     if (!is_auto_)
     {
         // Only send teleop cmd when we receive joystick input
-        sport_client_.Move(twist_buf_.linear.x, twist_buf_.linear.y, twist_buf_.angular.z);
+        sport_client_->Move(twist_buf_.linear.x, twist_buf_.linear.y, twist_buf_.angular.z);
     }
 }
 
@@ -155,7 +157,7 @@ void UnitreeTeleop::twist_callback(const geometry_msgs::msg::Twist::SharedPtr ms
     // Forward twist cmd when in auto mode
     if (is_auto_ && is_armed_)
     {
-        sport_client_.Move(msg->linear.x, msg->linear.y, msg->angular.z);
+        sport_client_->Move(msg->linear.x, msg->linear.y, msg->angular.z);
     }
 }
 

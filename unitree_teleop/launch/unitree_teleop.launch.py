@@ -14,13 +14,13 @@ def generate_launch_description():
 
     cmd_vel_topic_arg = DeclareLaunchArgument(
         'cmd_vel_topic',
-        default_value='/cmd_vel',
+        default_value='/tracker_cmd',
         description='Command velocity topic name'
     )
 
     network_interface_arg = DeclareLaunchArgument(
         'network_interface',
-        default_value='eth0',
+        default_value='enx0c379623c0ae',
         description='Network interface for unitree_sdk2 DDS communication'
     )
 
@@ -35,14 +35,14 @@ def generate_launch_description():
             'autorepeat_rate': 20.0
         }]
     )
-
+    
     # Unitree teleop node (using unitree_sdk2)
     unitree_teleop_node = Node(
         package='unitree_teleop',
         executable='unitree_teleop',
         name='unitree_teleop',
         remappings=[
-            ('twist_out', LaunchConfiguration('cmd_vel_topic'))
+            ('twist_auto', LaunchConfiguration('cmd_vel_topic'))
         ],
         parameters=[{
             'use_sim_time': False,
