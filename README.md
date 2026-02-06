@@ -30,10 +30,15 @@ sudo nmcli connection up os_eth
 ```
 
 ## Launch
-1. Launch unitree_teleop
-```
-ros2 launch unitree_teleop unitree_teleop_cyclonedds.launch.py
-```
+1. Launch unitree_teleop -- either SDK2 interface or ROS2 interface
+* SDK2 interface
+  ```
+  ros2 launch unitree_teleop unitree_teleop.launch.py
+  ```
+* ROS2 interface
+  ```
+  ros2 launch unitree_teleop unitree_teleop_ros2_cyclonedds.launch.py
+  ```
 2. Launch Ouster and LIO
 ```
 ros2 launch unitree_interface ouster128_rko_lio.launch.py
