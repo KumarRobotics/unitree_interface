@@ -77,7 +77,8 @@ def launch_setup(context, *args, **kwargs):
         namespace=ouster_ns,
         parameters=[params_file, {'auto_start': auto_start,
                                   'sensor_hostname': sensor_hostname,
-                                  'timestamp_mode': 'TIME_FROM_PTP_1588'}],
+                                  'timestamp_mode': 'TIME_FROM_PTP_1588',
+                                  'ptp_utc_tai_offset': 0.0}],
     )
 
     os_cloud = ComposableNode(
@@ -85,8 +86,10 @@ def launch_setup(context, *args, **kwargs):
         plugin='ouster_ros::OusterCloud',
         name='os_cloud',
         namespace=ouster_ns,
-        parameters=[params_file, {'timestamp_mode': 'TIME_FROM_PTP_1588'}],
+        parameters=[params_file, {'timestamp_mode': 'TIME_FROM_PTP_1588',
+                                  'ptp_utc_tai_offset': 0.0}],
     )
+
     
     # --- RKO LIO (no namespace so topics below are global like /ouster/imu) ---
     rko = ComposableNode(
