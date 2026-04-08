@@ -4,6 +4,7 @@
 
 import os
 from pathlib import Path
+import yaml
 import launch
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import ComposableNodeContainer, Node
@@ -151,6 +152,38 @@ def launch_setup(context, *args, **kwargs):
         extra_arguments=[{'use_intra_process_comms': True}],
     )
 
+    # Load UBlox GPS parameters
+    ublox_cfg = os.path.join(
+        get_package_share_directory('ublox_gps'),
+        'config', 'zed_f9p.yaml')
+    with open(ublox_cfg, 'r') as f:
+        ublox_params = yaml.safe_load(f)['ublox_gps_node']['ros__parameters']
+    # Ublox GPS node
+    ublox = ComposableNode(
+        package='ublox_gps',
+        plugin='ublox_node::UbloxNode',
+        name='ublox_gps_node',
+        parameters=[ublox_params],
+        remappings=[("/aidalm",  "/ublox_raw/aidalm"),
+                    ("/timtm2", "/ublox_raw/timtm2"),
+                    ("/rtcm", "/ublox_raw/rtcm"),
+                    ("/nmea", "/ublox_raw/nmea"),
+                    ("/navclock", "/ublox_raw/navclock"),
+                    ("/navcov", "/ublox_raw/navcov"),
+                    ("/navheading", "/ublox_raw/navheading"),
+                    ("/navrelposned", "/ublox_raw/navrelposned"),
+                    ("/navstate", "/ublox_raw/navstate"),
+                    ("/navsvin", "/ublox_raw/navsvin"),
+                    ("/navstatus", "/ublox_raw/navstatus"),
+                    ("/aideph", "/ublox_raw/aideph"),
+                    ("/diagnostics", "/ublox_raw/diagnostics"),
+                    ("/monhw", "/ublox_raw/monhw"),
+                    ("/navsin", "/ublox_raw/nmea"),
+                    ("/rtcm", "/ublox_raw/rtcm"),
+                    ("/rxmrtcm", "/ublox_raw/rxmrtcm")],
+        extra_arguments=[{'use_intra_process_comms': True}],
+    )
+
     # unified container
     container_name = 'ugv_container'
 
@@ -164,6 +197,7 @@ def launch_setup(context, *args, **kwargs):
             os_sensor,
             os_cloud,
             rko,
+            ublox,
             recorder,
         ],
     )
