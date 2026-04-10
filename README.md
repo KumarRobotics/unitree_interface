@@ -39,7 +39,12 @@ sudo nmcli connection up os_eth
   ```
   ros2 launch unitree_teleop unitree_teleop_ros2_cyclonedds.launch.py
   ```
-2. Launch Ouster and LIO
-```
-ros2 launch unitree_interface ouster128_rko_lio.launch.py
-```
+2. Launch sensors
+* Ouster and LIO
+  ```
+  ros2 launch unitree_interface ouster128_rko_lio.launch.py
+  ```
+* ZED cameras, Ouster and LIO
+  ```
+  ros2 launch unitree_interface sensors_lio.launch.py
+  ```
