@@ -89,8 +89,15 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
         if (gait_type_ != 0)
         {
             int32_t ret = sport_client_->SetGait(0);
-            gait_type_ = 0;
-            RCLCPP_INFO(this->get_logger(), "SetGait(0) regular: %d", ret);
+            if (ret == 0)
+            {
+                gait_type_ = 0;
+                RCLCPP_INFO(this->get_logger(), "SetGait(0) regular: %d", ret);
+            }
+            else
+            {
+                RCLCPP_WARN(this->get_logger(), "SetGait(0) regular failed: %d", ret);
+            }
         }
     }
     else if (gait_axis == 0)
@@ -99,8 +106,15 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
         if (gait_type_ != 2)
         {
             int32_t ret = sport_client_->SetGait(2);
-            gait_type_ = 2;
-            RCLCPP_INFO(this->get_logger(), "SetGait(2) climb: %d", ret);
+            if (ret == 0)
+            {
+                gait_type_ = 2;
+                RCLCPP_INFO(this->get_logger(), "SetGait(2) climb: %d", ret);
+            }
+            else
+            {
+                RCLCPP_WARN(this->get_logger(), "SetGait(2) climb failed: %d", ret);
+            }
         }
     }
     else if (gait_axis == -1)
@@ -109,8 +123,15 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
         if (gait_type_ != 1)
         {
             int32_t ret = sport_client_->SetGait(1);
-            gait_type_ = 1;
-            RCLCPP_INFO(this->get_logger(), "SetGait(1) terrain: %d", ret);
+            if (ret == 0)
+            {
+                gait_type_ = 1;
+                RCLCPP_INFO(this->get_logger(), "SetGait(1) terrain: %d", ret);
+            }
+            else
+            {
+                RCLCPP_WARN(this->get_logger(), "SetGait(1) terrain failed: %d", ret);
+            }
         }
     }
 

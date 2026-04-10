@@ -12,7 +12,11 @@ class SportClientExt : public unitree::robot::go2::SportClient
 {
 public:
     explicit SportClientExt(bool enableLease = false)
-        : unitree::robot::go2::SportClient(enableLease) {}
+        : unitree::robot::go2::SportClient(enableLease)
+    {
+        // Go2 sport_api.hpp in this SDK build does not expose 1011, so register it explicitly.
+        UT_ROBOT_CLIENT_REG_API_NO_PROI(ROBOT_SPORT_API_ID_SETGAIT);
+    }
 
     ~SportClientExt() = default;
     
@@ -23,6 +27,11 @@ public:
         json.data = gait_type;
         parameter = unitree::common::ToJsonString(json);
         return Call(ROBOT_SPORT_API_ID_SETGAIT, parameter, data);
+    }
+
+    int32_t SwitchGait(int gait_type)
+    {
+        return SetGait(gait_type);
     }
 };
 
