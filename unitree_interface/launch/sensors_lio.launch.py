@@ -157,6 +157,17 @@ def launch_setup(context, *args, **kwargs):
                     "/ugv/ouster/imu",
                     "/ugv/rko_lio/odometry",
                     "/ugv/rko_lio/local_map",
+                    "/ugv/mavros/global_position/global",
+                    "/ugv/mavros/global_position/compass_hdg",
+                    "/ugv/mavros/global_position/local",
+                    "/ugv/mavros/global_position/raw/fix",
+                    "/ugv/mavros/global_position/rel_alt",
+                    "/ugv/mavros/altitude",
+                    "/ugv/mavros/imu/data",
+                    "/ugv/mavros/imu/data_raw",
+                    "/ugv/mavros/local_position/odom",
+                    "/ugv/glider/odom",
+                    "/ugv/pose_map",
                     "/ugv/zed_front/rgb/color/rect/image",
                     "/ugv/zed_front/rgb/color/rect/camera_info",
                     "/ugv/zed_left/rgb/color/rect/image",
@@ -165,7 +176,11 @@ def launch_setup(context, *args, **kwargs):
                     "/ugv/zed_right/rgb/color/rect/camera_info",
                     "/ugv/zed_back/rgb/color/rect/image",
                     "/ugv/zed_back/rgb/color/rect/camera_info",
-                ],
+                    "/tf",
+                    "/tf_static",
+                    "/parameter_events",
+                    "/rosout",
+                    ],
                 'storage_id': 'mcap',
                 'record_all': False,
                 'disable_discovery': False,
@@ -175,42 +190,6 @@ def launch_setup(context, *args, **kwargs):
             }
         ],
         remappings=[],
-        extra_arguments=[{'use_intra_process_comms': True}],
-    )
-
-    # UBlox
-    ublox_cfg = os.path.join(
-        get_package_share_directory('ublox_gps'),
-        'config',
-        'zed_f9p.yaml'
-    )
-    with open(ublox_cfg, 'r') as f:
-        ublox_params = yaml.safe_load(f)['ublox_gps_node']['ros__parameters']
-
-    ublox = ComposableNode(
-        package='ublox_gps',
-        plugin='ublox_node::UbloxNode',
-        name='ublox_gps_node',
-        parameters=[ublox_params],
-        remappings=[
-            ("/aidalm", "/ublox_raw/aidalm"),
-            ("/timtm2", "/ublox_raw/timtm2"),
-            ("/rtcm", "/ublox_raw/rtcm"),
-            ("/nmea", "/ublox_raw/nmea"),
-            ("/navclock", "/ublox_raw/navclock"),
-            ("/navcov", "/ublox_raw/navcov"),
-            ("/navheading", "/ublox_raw/navheading"),
-            ("/navrelposned", "/ublox_raw/navrelposned"),
-            ("/navstate", "/ublox_raw/navstate"),
-            ("/navsvin", "/ublox_raw/navsvin"),
-            ("/navstatus", "/ublox_raw/navstatus"),
-            ("/aideph", "/ublox_raw/aideph"),
-            ("/diagnostics", "/ublox_raw/diagnostics"),
-            ("/monhw", "/ublox_raw/monhw"),
-            ("/navsin", "/ublox_raw/nmea"),
-            ("/rtcm", "/ublox_raw/rtcm"),
-            ("/rxmrtcm", "/ublox_raw/rxmrtcm"),
-        ],
         extra_arguments=[{'use_intra_process_comms': True}],
     )
 
@@ -227,7 +206,6 @@ def launch_setup(context, *args, **kwargs):
             os_sensor,
             os_cloud,
             rko,
-            ublox,
             recorder,
         ],
     )
