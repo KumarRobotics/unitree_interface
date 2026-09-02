@@ -1,7 +1,5 @@
-# Copyright 2023 Ouster, Inc.
-#
-# Launch Ouster nodes + RKO LIO + rosbag2 Recorder + ZED Multi Camera in one container
-# ROS 2 Humble version with delayed/staggered ZED startup
+# launch Ouster nodes + RKO LIO + ZED Multi Camera in one container
+# with delayed/staggered ZED startup
 
 import os
 from datetime import datetime
@@ -146,63 +144,6 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
-    # Native rosbag2 recorder (available as a component in ROS 2 Jazzy).
-    # It opens the bag during construction, so start paused and let the
-    # operator begin collection through /ugv/recorder/resume.
-    bag_uri = '/bags/ugv_' + datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    recorder = ComposableNode(
-        package='rosbag2_transport',
-        plugin='rosbag2_transport::Recorder',
-        name='recorder',
-        namespace='ugv',
-        parameters=[
-            {
-                'record.topics': [
-                    "/ugv/ouster/points",
-                    "/ugv/ouster/imu",
-                    "/ugv/rko_lio/odometry",
-                    "/ugv/rko_lio/local_map",
-                    "/ugv/mavros/global_position/global",
-                    "/ugv/mavros/global_position/compass_hdg",
-                    "/ugv/mavros/global_position/local",
-                    "/ugv/mavros/global_position/raw/fix",
-                    "/ugv/mavros/global_position/rel_alt",
-                    "/ugv/mavros/altitude",
-                    "/ugv/mavros/imu/data",
-                    "/ugv/mavros/imu/data_raw",
-                    "/ugv/mavros/local_position/odom",
-                    "/ugv/glider/odom",
-                    "/ugv/pose_map",
-                    "/ugv/zed_front/rgb/color/rect/image",
-                    "/ugv/zed_front/rgb/color/rect/camera_info",
-                    "/ugv/zed_left/rgb/color/rect/image",
-                    "/ugv/zed_left/rgb/color/rect/camera_info",
-                    "/ugv/zed_right/rgb/color/rect/image",
-                    "/ugv/zed_right/rgb/color/rect/camera_info",
-                    "/ugv/zed_back/rgb/color/rect/image",
-                    "/ugv/zed_back/rgb/color/rect/camera_info",
-                    "/tf",
-                    "/tf_static",
-                    "/parameter_events",
-                    "/rosout",
-                    ],
-                'record.all_topics': False,
-                'record.all_services': False,
-                'record.is_discovery_disabled': False,
-                'record.rmw_serialization_format': 'cdr',
-                'record.include_hidden_topics': False,
-                'record.ignore_leaf_topics': False,
-                'record.start_paused': True,
-                'record.disable_keyboard_controls': True,
-                'storage.uri': bag_uri,
-                'storage.storage_id': 'mcap',
-                'storage.max_cache_size': 104857600,
-            }
-        ],
-        remappings=[],
-        extra_arguments=[{'use_intra_process_comms': False}],
-    )
-
     # unified container
     container_name = 'ugv_container'
 
@@ -216,7 +157,6 @@ def launch_setup(context, *args, **kwargs):
             os_sensor,
             os_cloud,
             rko,
-            recorder,
         ],
     )
     actions.append(ugv_container)
@@ -319,8 +259,6 @@ def generate_launch_description():
             default_value='192.168.100.12',
             description='Ouster sensor hostname or IP address'
         ),
-        DeclareLaunchArgument('bag_dir', default_value='/root/unitree_ws/bags/'),
-        DeclareLaunchArgument('record_all', default_value='True'),
 
         # ZED Multi Camera arguments
         DeclareLaunchArgument(
