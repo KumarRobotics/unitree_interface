@@ -4,6 +4,7 @@
 # ROS 2 Humble version with delayed/staggered ZED startup
 
 import os
+from datetime import datetime
 from pathlib import Path
 import yaml
 import launch
@@ -145,14 +146,18 @@ def launch_setup(context, *args, **kwargs):
         ],
     )
 
-    # rosbag recorder
+    # Native rosbag2 recorder (available as a component in ROS 2 Jazzy).
+    # It opens the bag during construction, so start paused and let the
+    # operator begin collection through /ugv/recorder/resume.
+    bag_uri = '/bags/ugv_' + datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     recorder = ComposableNode(
-        package='rosbag2_composable_recorder',
-        plugin='rosbag2_composable_recorder::ComposableRecorder',
+        package='rosbag2_transport',
+        plugin='rosbag2_transport::Recorder',
         name='recorder',
+        namespace='ugv',
         parameters=[
             {
-                'topics': [
+                'record.topics': [
                     "/ugv/ouster/points",
                     "/ugv/ouster/imu",
                     "/ugv/rko_lio/odometry",
@@ -181,16 +186,21 @@ def launch_setup(context, *args, **kwargs):
                     "/parameter_events",
                     "/rosout",
                     ],
-                'storage_id': 'mcap',
-                'record_all': False,
-                'disable_discovery': False,
-                'serialization_format': 'cdr',
-                'start_recording_immediately': False,
-                'bag_prefix': '/bags/ugv_',
+                'record.all_topics': False,
+                'record.all_services': False,
+                'record.is_discovery_disabled': False,
+                'record.rmw_serialization_format': 'cdr',
+                'record.include_hidden_topics': False,
+                'record.ignore_leaf_topics': False,
+                'record.start_paused': True,
+                'record.disable_keyboard_controls': True,
+                'storage.uri': bag_uri,
+                'storage.storage_id': 'mcap',
+                'storage.max_cache_size': 104857600,
             }
         ],
         remappings=[],
-        extra_arguments=[{'use_intra_process_comms': True}],
+        extra_arguments=[{'use_intra_process_comms': False}],
     )
 
     # unified container
