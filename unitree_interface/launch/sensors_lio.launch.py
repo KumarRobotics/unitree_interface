@@ -10,6 +10,7 @@ import launch
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import ComposableNodeContainer, Node
 from launch_ros.descriptions import ComposableNode
+from launch_ros.parameter_descriptions import ParameterValue
 from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
@@ -84,11 +85,15 @@ def launch_setup(context, *args, **kwargs):
             )
         ]
 
+    ipc_options = [{'use_intra_process_comms': ParameterValue(
+        LaunchConfiguration('use_intra_process_comms'), value_type=bool)}]
+
     # --- Ouster components ---
     os_sensor = ComposableNode(
         package='ouster_ros',
         plugin='ouster_ros::OusterSensor',
         name='os_sensor',
+        extra_arguments=ipc_options,
         namespace=ouster_ns,
         parameters=[
             params_file,
@@ -105,6 +110,7 @@ def launch_setup(context, *args, **kwargs):
         package='ouster_ros',
         plugin='ouster_ros::OusterCloud',
         name='os_cloud',
+        extra_arguments=ipc_options,
         namespace=ouster_ns,
         parameters=[
             params_file,
@@ -120,6 +126,7 @@ def launch_setup(context, *args, **kwargs):
         package='rko_lio',
         plugin='rko_lio::ros::OnlineNode',
         name='online_node_component',
+        extra_arguments=ipc_options,
         namespace='ugv',
         parameters=[
             params_file,
@@ -185,6 +192,7 @@ def launch_setup(context, *args, **kwargs):
             ),
             launch_arguments={
                 'container_name': container_name,
+                'enable_ipc': LaunchConfiguration('use_intra_process_comms'),
                 'camera_name': name,
                 'camera_model': model,
                 'serial_number': serial,
@@ -245,6 +253,7 @@ def generate_launch_description():
     default_params_file = Path(ouster_ros_pkg_dir) / 'config' / 'os_sensor_cloud_image_params.yaml'
 
     return launch.LaunchDescription([
+        DeclareLaunchArgument('use_intra_process_comms', default_value='true'),
         # Ouster arguments
         DeclareLaunchArgument(
             'params_file',
