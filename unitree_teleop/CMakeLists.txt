@@ -13,6 +13,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(mavros_msgs REQUIRED)
 
 # Find unitree_sdk2
 find_package(unitree_sdk2 REQUIRED
@@ -32,6 +33,7 @@ ament_target_dependencies(unitree_teleop
   geometry_msgs
   sensor_msgs
   std_msgs
+  mavros_msgs
 )
 
 target_link_libraries(unitree_teleop unitree_sdk2)

@@ -1,6 +1,7 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import LaunchConfigurationEquals
 from launch.substitutions import LaunchConfiguration
 
 
@@ -24,6 +25,19 @@ def generate_launch_description():
         description='Network interface for unitree_sdk2 DDS communication'
     )
 
+    input_source_arg = DeclareLaunchArgument(
+        'input_source',
+        default_value='joy',
+        choices=['joy', 'mavros'],
+        description='RC input: joy (FrSky USB receiver) or mavros (RCIn from the flight controller)'
+    )
+
+    rc_in_topic_arg = DeclareLaunchArgument(
+        'rc_in_topic',
+        default_value='/mavros/rc/in',
+        description='mavros RCIn topic, used when input_source:=mavros'
+    )
+
     # Joy node
     joy_node = Node(
         package='joy',
@@ -33,7 +47,8 @@ def generate_launch_description():
             'dev': LaunchConfiguration('joy_dev'),
             'deadzone': 0.1,
             'autorepeat_rate': 20.0
-        }]
+        }],
+        condition=LaunchConfigurationEquals('input_source', 'joy')
     )
     
     # Unitree teleop node (using unitree_sdk2)
@@ -42,11 +57,13 @@ def generate_launch_description():
         executable='unitree_teleop',
         name='unitree_teleop',
         remappings=[
-            ('twist_auto', LaunchConfiguration('cmd_vel_topic'))
+            ('twist_auto', LaunchConfiguration('cmd_vel_topic')),
+            ('rc_in', LaunchConfiguration('rc_in_topic'))
         ],
         parameters=[{
             'use_sim_time': False,
             'network_interface': LaunchConfiguration('network_interface'),
+            'input_source': LaunchConfiguration('input_source'),
         }]
     )
 
@@ -54,6 +71,8 @@ def generate_launch_description():
         joy_dev_arg,
         cmd_vel_topic_arg,
         network_interface_arg,
+        input_source_arg,
+        rc_in_topic_arg,
         joy_node,
         unitree_teleop_node
     ])
