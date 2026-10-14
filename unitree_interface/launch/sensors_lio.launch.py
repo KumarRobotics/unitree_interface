@@ -272,17 +272,20 @@ def generate_launch_description():
         # ZED Multi Camera arguments
         DeclareLaunchArgument(
             'cam_names',
-            default_value='zed_front,zed_back,zed_left,zed_right',
+            # default_value='zed_front,zed_back, zed_left,zed_right',
+            default_value='zed_front,zed_left,zed_right',
             description='Array of camera names, e.g. [zed_front,zed_back]'
         ),
         DeclareLaunchArgument(
             'cam_models',
-            default_value='zedxone4k,zedxone4k,zedxone4k,zedxone4k',
+            # default_value='zedxone4k,zedxone4k,zedxone4k,zedxone4k',
+            default_value='zedxone4k,zedxone4k,zedxone4k',
             description='Array of camera models, e.g. [zed2i,zed2]'
         ),
         DeclareLaunchArgument(
             'cam_serials',
-            default_value='313815015,317242564,311718578,315786072',
+            # default_value='313815015,317242564,311718578,315786072',
+            default_value='313815015,311718578,315786072',
             description='Array of camera serials, e.g. [35199186,23154724]'
         ),
         DeclareLaunchArgument(
