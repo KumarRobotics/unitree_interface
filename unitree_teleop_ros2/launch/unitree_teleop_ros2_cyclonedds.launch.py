@@ -1,6 +1,7 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch.conditions import LaunchConfigurationEquals
 from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
@@ -15,6 +16,19 @@ def generate_launch_description():
         'cmd_vel_topic',
         default_value='/tracker_cmd',
         description='Command velocity topic name'
+    )
+
+    input_source_arg = DeclareLaunchArgument(
+        'input_source',
+        default_value='mavros',
+        choices=['joy', 'mavros'],
+        description='RC input: joy (FrSky USB receiver) or mavros (RCIn from the flight controller)'
+    )
+
+    rc_in_topic_arg = DeclareLaunchArgument(
+        'rc_in_topic',
+        default_value='/mavros/rc/in',
+        description='mavros RCIn topic, used when input_source:=mavros'
     )
     
     # Set CycloneDDS URI and RMW implementation environment variables
@@ -34,7 +48,8 @@ def generate_launch_description():
             'dev': LaunchConfiguration('joy_dev'),
             'deadzone': 0.1,
             'autorepeat_rate': 20.0
-        }]
+        }],
+        condition=LaunchConfigurationEquals('input_source', 'joy')
     )
     
     # Unitree teleop node
@@ -43,16 +58,20 @@ def generate_launch_description():
         executable='unitree_teleop_ros2',
         name='unitree_teleop_ros2',
         remappings=[
-            ('twist_auto', LaunchConfiguration('cmd_vel_topic'))
+            ('twist_auto', LaunchConfiguration('cmd_vel_topic')),
+            ('rc_in', LaunchConfiguration('rc_in_topic'))
         ],
         parameters=[{
-            'use_sim_time': False
+            'use_sim_time': False,
+            'input_source': LaunchConfiguration('input_source')
         }]
     )
     
     return LaunchDescription([
         joy_dev_arg,
         cmd_vel_topic_arg,
+        input_source_arg,
+        rc_in_topic_arg,
         cyclonedds_uri_env,
         rmw_implementation_env,
         joy_node,

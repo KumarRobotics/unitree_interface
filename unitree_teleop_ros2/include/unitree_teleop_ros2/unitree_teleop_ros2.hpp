@@ -5,9 +5,11 @@
 #include <sensor_msgs/msg/joy.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <std_msgs/msg/bool.hpp>
+#include <memory>
 #include <thread>
 #include "unitree_api/msg/request.hpp"
 #include "unitree_go/msg/sport_mode_state.hpp"
+#include "unitree_teleop_common/input_adapter.hpp"
 #include "unitree_teleop_ros2/common/ros2_sport_client.h"
 
 class UnitreeTeleop : public rclcpp::Node
@@ -19,9 +21,10 @@ private:
     // callback functions
     void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg);
     void twist_callback(const geometry_msgs::msg::Twist::SharedPtr msg);
+    void input_timeout_callback();
 
     // publishers and subscribers
-    rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+    std::unique_ptr<unitree_teleop_common::InputAdapter> input_adapter_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr twist_sub_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr is_auto_pub_;
     rclcpp::Publisher<unitree_go::msg::SportModeState>::SharedPtr state_pub_;

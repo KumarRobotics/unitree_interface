@@ -13,6 +13,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(unitree_api REQUIRED)
 find_package(unitree_go REQUIRED)
+find_package(unitree_teleop_common REQUIRED)
 
 # Include directories
 include_directories(include)
@@ -32,6 +33,7 @@ ament_target_dependencies(unitree_teleop_ros2
   std_msgs
   unitree_api
   unitree_go
+  unitree_teleop_common
 )
 
 # Install executable

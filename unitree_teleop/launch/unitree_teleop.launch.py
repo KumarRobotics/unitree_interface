@@ -27,14 +27,14 @@ def generate_launch_description():
 
     input_source_arg = DeclareLaunchArgument(
         'input_source',
-        default_value='joy',
+        default_value='mavros',
         choices=['joy', 'mavros'],
         description='RC input: joy (FrSky USB receiver) or mavros (RCIn from the flight controller)'
     )
 
     rc_in_topic_arg = DeclareLaunchArgument(
         'rc_in_topic',
-        default_value='/mavros/rc/in',
+        default_value='/ugv/mavros/rc/in',
         description='mavros RCIn topic, used when input_source:=mavros'
     )
 

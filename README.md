@@ -37,8 +37,17 @@ sudo nmcli connection up os_eth
   ```
 * ROS2 interface
   ```
-  ros2 launch unitree_teleop unitree_teleop_ros2_cyclonedds.launch.py
+  ros2 launch unitree_teleop_ros2 unitree_teleop_ros2_cyclonedds.launch.py
   ```
+
+Both teleop interfaces use the flight controller's MAVROS RC input by default.
+The default RC topic is `/mavros/rc/in` and can be changed with `rc_in_topic`.
+To use the USB joystick instead, set `input_source:=joy`:
+
+```
+ros2 launch unitree_teleop_ros2 unitree_teleop_ros2_cyclonedds.launch.py \
+  input_source:=joy
+```
 2. Launch sensors
 * Ouster and LIO
   ```

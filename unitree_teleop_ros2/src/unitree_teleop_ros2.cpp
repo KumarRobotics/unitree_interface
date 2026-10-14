@@ -9,11 +9,10 @@ UnitreeTeleop::UnitreeTeleop()
       is_armed_(false),
       gait_type_(0)
 {
-    // subscribe to joy
-    joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-        "joy", 
-        10,
-        std::bind(&UnitreeTeleop::joy_callback, this, std::placeholders::_1));
+    input_adapter_ = std::make_unique<unitree_teleop_common::InputAdapter>(
+        *this,
+        std::bind(&UnitreeTeleop::joy_callback, this, std::placeholders::_1),
+        std::bind(&UnitreeTeleop::input_timeout_callback, this));
     // subscribe to twist commands
     twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
         "twist_auto", 
@@ -121,7 +120,8 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     twist_buf_.angular.y = 0.0;
     twist_buf_.angular.z = angular_vel_z;
 
-    is_auto_ = msg->axes[4] > 0.0;
+    // Mode axis: 0 = manual, 1 = auto; -1 also selects manual.
+    is_auto_ = msg->axes[4] == 1.0f;
 
     if (!is_auto_)
     {
@@ -137,6 +137,20 @@ void UnitreeTeleop::twist_callback(const geometry_msgs::msg::Twist::SharedPtr ms
     {
         sport_client_.Move(req_, msg->linear.x, msg->linear.y, msg->angular.z);
     }
+}
+
+void UnitreeTeleop::input_timeout_callback()
+{
+    is_auto_ = false;
+    if (is_armed_)
+    {
+        is_armed_ = false;
+        sport_client_.StopMove(req_);
+    }
+
+    auto is_auto_msg = std_msgs::msg::Bool();
+    is_auto_msg.data = is_auto_;
+    is_auto_pub_->publish(is_auto_msg);
 }
 
 int main(int argc, char ** argv)

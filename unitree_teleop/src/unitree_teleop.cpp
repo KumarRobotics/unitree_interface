@@ -1,9 +1,5 @@
 #include "unitree_teleop/unitree_teleop.hpp"
 #include <unitree/robot/channel/channel_factory.hpp>
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <stdexcept>
 
 UnitreeTeleop::UnitreeTeleop()
     : Node("unitree_teleop"),
@@ -26,66 +22,10 @@ UnitreeTeleop::UnitreeTeleop()
     sport_client_->SetTimeout(10.0f);
     sport_client_->Init();
 
-    // Input source: "joy" (FrSky USB receiver via joy_node) or "mavros" (RCIn from the flight controller)
-    this->declare_parameter<std::string>("input_source", "joy");
-    std::string input_source = this->get_parameter("input_source").as_string();
-
-    // RCIn -> Joy mapping. Entry i gives the 1-indexed RC channel for joy axis i.
-    // Defaults assume the FC receiver is bound to the same transmitter model as the USB
-    // receiver, which exposes channels 1..N as axes 0..N-1. joy_node inverts SDL axes,
-    // so all channels are reversed by default to reproduce its sign convention.
-    this->declare_parameter<std::vector<int64_t>>("rc_axis_channels", {1, 2, 3, 4, 5, 6, 7});
-    this->declare_parameter<std::vector<bool>>("rc_axis_reversed", {true, true, true, true, true, true, true});
-    // Joy axes driven by switches; these are quantised to exactly -1/0/1
-    this->declare_parameter<std::vector<int64_t>>("rc_switch_axes", {4, 5, 6});
-    this->declare_parameter<double>("rc_pwm_center", 1500.0);
-    this->declare_parameter<double>("rc_pwm_half_range", 500.0);
-    this->declare_parameter<double>("rc_deadzone", 0.1);
-    this->declare_parameter<double>("rc_timeout", 0.5);
-    rc_axis_channels_ = this->get_parameter("rc_axis_channels").as_integer_array();
-    rc_axis_reversed_ = this->get_parameter("rc_axis_reversed").as_bool_array();
-    rc_switch_axes_ = this->get_parameter("rc_switch_axes").as_integer_array();
-    rc_pwm_center_ = this->get_parameter("rc_pwm_center").as_double();
-    rc_pwm_half_range_ = this->get_parameter("rc_pwm_half_range").as_double();
-    rc_deadzone_ = this->get_parameter("rc_deadzone").as_double();
-    rc_timeout_ = this->get_parameter("rc_timeout").as_double();
-    last_rc_time_ = this->now();
-    rc_timed_out_ = true;
-
-    if (input_source == "mavros")
-    {
-        if (rc_axis_channels_.size() < 7 || rc_axis_reversed_.size() != rc_axis_channels_.size())
-        {
-            throw std::invalid_argument(
-                "rc_axis_channels needs >= 7 entries and rc_axis_reversed must match its length");
-        }
-
-        // Subscribe to RCIn (mavros publishes this best-effort)
-        rc_in_sub_ = this->create_subscription<mavros_msgs::msg::RCIn>(
-            "rc_in",
-            rclcpp::SensorDataQoS(),
-            std::bind(&UnitreeTeleop::rc_in_callback, this, std::placeholders::_1));
-
-        rc_watchdog_timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(100),
-            std::bind(&UnitreeTeleop::rc_watchdog_callback, this));
-
-        RCLCPP_INFO(this->get_logger(), "Input source: mavros RCIn on %s", rc_in_sub_->get_topic_name());
-    }
-    else if (input_source == "joy")
-    {
-        // Subscribe to joy
-        joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
-            "joy",
-            10,
-            std::bind(&UnitreeTeleop::joy_callback, this, std::placeholders::_1));
-
-        RCLCPP_INFO(this->get_logger(), "Input source: joy on %s", joy_sub_->get_topic_name());
-    }
-    else
-    {
-        throw std::invalid_argument("input_source must be 'joy' or 'mavros', got '" + input_source + "'");
-    }
+    input_adapter_ = std::make_unique<unitree_teleop_common::InputAdapter>(
+        *this,
+        std::bind(&UnitreeTeleop::joy_callback, this, std::placeholders::_1),
+        std::bind(&UnitreeTeleop::input_timeout_callback, this));
 
     // Subscribe to twist commands
     twist_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
@@ -223,7 +163,8 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     twist_buf_.angular.y = 0.0;
     twist_buf_.angular.z = angular_vel_z;
 
-    is_auto_ = msg->axes[4] > 0.0;
+    // Mode axis: 0 = manual, 1 = auto; -1 also selects manual.
+    is_auto_ = msg->axes[4] == 1.0f;
 
     if (!is_auto_)
     {
@@ -232,69 +173,8 @@ void UnitreeTeleop::joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg)
     }
 }
 
-void UnitreeTeleop::rc_in_callback(const mavros_msgs::msg::RCIn::SharedPtr msg)
+void UnitreeTeleop::input_timeout_callback()
 {
-    // Convert PWM channels into a Joy message laid out like the FrSky USB receiver
-    auto joy = std::make_shared<sensor_msgs::msg::Joy>();
-    joy->header = msg->header;
-    joy->axes.resize(rc_axis_channels_.size(), 0.0f);
-
-    for (size_t i = 0; i < rc_axis_channels_.size(); ++i)
-    {
-        int64_t ch = rc_axis_channels_[i];
-        if (ch < 1 || static_cast<size_t>(ch) > msg->channels.size())
-        {
-            RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000,
-                "RCIn has %zu channels, axis %zu wants channel %ld; ignoring message",
-                msg->channels.size(), i, ch);
-            return;
-        }
-
-        double value = (static_cast<double>(msg->channels[ch - 1]) - rc_pwm_center_) / rc_pwm_half_range_;
-        value = std::clamp(value, -1.0, 1.0);
-        if (rc_axis_reversed_[i])
-        {
-            value = -value;
-        }
-
-        bool is_switch = std::find(rc_switch_axes_.begin(), rc_switch_axes_.end(),
-                                   static_cast<int64_t>(i)) != rc_switch_axes_.end();
-        if (is_switch)
-        {
-            value = value > 0.5 ? 1.0 : (value < -0.5 ? -1.0 : 0.0);
-        }
-        else if (std::abs(value) < rc_deadzone_)
-        {
-            value = 0.0;
-        }
-        else
-        {
-            // Rescale outside the deadzone like joy_node does
-            value = std::copysign((std::abs(value) - rc_deadzone_) / (1.0 - rc_deadzone_), value);
-        }
-        joy->axes[i] = static_cast<float>(value);
-    }
-
-    if (rc_timed_out_)
-    {
-        RCLCPP_INFO(this->get_logger(), "RCIn received");
-        rc_timed_out_ = false;
-    }
-    last_rc_time_ = this->now();
-
-    joy_callback(joy);
-}
-
-void UnitreeTeleop::rc_watchdog_callback()
-{
-    // joy_node keeps publishing on its own, but RCIn simply stops if mavros or the FC link drops
-    if (rc_timed_out_ || (this->now() - last_rc_time_).seconds() < rc_timeout_)
-    {
-        return;
-    }
-
-    rc_timed_out_ = true;
-    RCLCPP_WARN(this->get_logger(), "No RCIn for %.2f s; stopping and leaving auto", rc_timeout_);
     is_auto_ = false;
     if (is_armed_)
     {

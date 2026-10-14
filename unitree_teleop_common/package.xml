@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>unitree_teleop_common</name>
+  <version>1.0.0</version>
+  <description>Shared joystick and MAVROS RC input adapter for Unitree teleop nodes</description>
+
+  <maintainer email="dexterong94@gmail.com">Dexter Ong</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>mavros_msgs</depend>
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
