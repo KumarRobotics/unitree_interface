@@ -5,7 +5,7 @@
 #   /ugv/<cam>_container     one ZED camera each (component_container_isolated)
 #   /ugv/recorder_container  empty; /bags/start_recording.sh loads the recorder here
 #
-# Replaces sensors_lio.launch.py, which put everything (and, via the planner's
+# Replaces sensors_lio.launch.py (removed), which put everything (and, via the planner's
 # container:= argument, the mapper/planner too) in one process: a ZED SDK abort
 # took the lidar, LIO and planner down with it (component_container_mt exit -6 /
 # -11 / 1 in ~/.ros/log, preceded by "CAMERA NOT INITIALIZED" / "CAMERA STREAM

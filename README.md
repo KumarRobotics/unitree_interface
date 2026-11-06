@@ -53,7 +53,9 @@ ros2 launch unitree_teleop_ros2 unitree_teleop_ros2_cyclonedds.launch.py \
   ```
   ros2 launch unitree_interface ouster128_rko_lio.launch.py
   ```
-* ZED cameras, Ouster and LIO
+* ZED cameras, Ouster and LIO (BIEVR-LIO by default; `lio:=rko_lio` for RKO-LIO).
+  Each sensor runs in its own respawning process, plus an empty
+  `/ugv/recorder_container` for the bag recorder.
   ```
-  ros2 launch unitree_interface sensors_lio.launch.py
+  ros2 launch unitree_interface sensors.launch.py
   ```
