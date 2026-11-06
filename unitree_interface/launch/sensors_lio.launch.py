@@ -3,7 +3,6 @@
 #   /ugv/lidar_container     os_sensor + os_cloud (intra-process packets -> cloud)
 #   /ugv/bievr_lio           BIEVR-LIO (default), standalone node; lio:=rko_lio for RKO-LIO
 #   /ugv/<cam>_container     one ZED camera each (component_container_isolated)
-#   /ugv/recorder_container  empty; /bags/start_recording.sh loads the recorder here
 #
 # An earlier sensors_lio.launch.py put everything (and, via the planner's
 # container:= argument, the mapper/planner too) in one process: a ZED SDK abort
@@ -135,11 +134,6 @@ def launch_setup(context, *args, **kwargs):
             }]))
     elif lio != 'none':
         return [LogInfo(msg=f'Unknown lio:={lio} (bievr_lio, rko_lio or none)')]
-
-    # --- Recorder target -------------------------------------------------------
-    # Not respawned: a recorder that died should be noticed, not silently replaced
-    # by an empty container.
-    actions.append(container('recorder_container', False, 0.0))
 
     # --- ZED cameras: one isolated container each ------------------------------
     zed_launch = os.path.join(zed_wrapper_pkg_dir, 'launch', 'zed_camera.launch.py')
