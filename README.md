@@ -57,5 +57,5 @@ ros2 launch unitree_teleop_ros2 unitree_teleop_ros2_cyclonedds.launch.py \
   Each sensor runs in its own respawning process, plus an empty
   `/ugv/recorder_container` for the bag recorder.
   ```
-  ros2 launch unitree_interface sensors.launch.py
+  ros2 launch unitree_interface sensors_lio.launch.py
   ```
