@@ -1,0 +1,35 @@
+# BIEVR-LIO algorithm parameters: upstream defaults (config/params.yaml at
+# commit 2306022), with the IMU frame "os_imu" and the dashboard off. These
+# were the settings of the bag comparison against RKO-LIO.
+
+map:
+  pixel_size_m: 0.05 # Pixel side length [m]
+  voxel_size_m: 0.5 # Voxel side length [m]
+  normal_tolerance_deg: 3 # Normal change threshold to trigger reprojection of voxel image [°]
+  smooth: True # Apply smoothing to the voxel image
+  weighted: True # Weighted pixel update
+  max_size: 1500000 # Maximum number of voxels to keep in the map
+  frame: "odom"
+
+preprocess:
+  downsample_resolution_m: 0.1 # Downsample points to this resolution [m]. In case of informed sampling, this
+  # corresponds to the high resolution voxels
+  informed_sampling: True
+
+optimization:
+  huber_delta: 0.1 # Huber norm threshold
+
+imu:  
+    window_s: 10 # Time window for the inertial optimization [s]
+    t_init: 0.2 # Time to initialize bias and gravity [s]
+    frame: "os_imu"
+
+debug:
+  publish_all_clouds: False # Publish all clouds (fine, coarse, deskewed)
+  timing: False
+  log: False
+  dashboard: False # Fancy live status print (position, biases, timing, ...)
+  dashboard_ascii_path: "" # ASCII art for the dashboard. Empty = bievr_ascii.txt next to the config.
+  trajectory_path: "" # Path to save trajectory. If empty, logs will not be saved.
+
+max_num_threads: 0 # 0 = automatic, >0 = number of threads to use for parallel processing

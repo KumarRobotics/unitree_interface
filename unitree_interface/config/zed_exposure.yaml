@@ -1,0 +1,20 @@
+# Exposure overrides for the UGV ZED X One 4K cameras, applied on top of the
+# zed_wrapper defaults (common_mono.yaml) via ros_params_override_path.
+#
+# Outdoor bags with the SDK defaults (compensation 50, AE range 28-30000 us)
+# were badly overexposed: 43-57 % of pixels clipped, median luma 191-225.
+# Indoors, live, the same defaults gave a normal image, and fixed exposures down
+# to 28 us scaled correctly, so the sensor can expose for sun; the auto-exposure
+# target is what is off outdoors.
+#
+# All of these are [DYNAMIC]; tune live, e.g.
+#   ros2 param set /ugv/zed_front video.exposure_compensation 25
+# and watch with debug.debug_camera_controls: true.
+/**:
+    ros__parameters:
+        video:
+            auto_exposure: true
+            exposure_compensation: 30         # 50 = none; lower = darker target
+            auto_exposure_time_range_min: 28
+            auto_exposure_time_range_max: 5000 # was 30000; AE uses gain beyond this in low light
+            auto_analog_gain: true

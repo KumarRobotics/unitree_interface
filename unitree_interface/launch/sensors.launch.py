@@ -1,7 +1,7 @@
 # UGV sensors in separate, individually restartable processes.
 #
 #   /ugv/lidar_container     os_sensor + os_cloud (intra-process packets -> cloud)
-#   /ugv/rko_lio             RKO-LIO, standalone node
+#   /ugv/bievr_lio           BIEVR-LIO (default), standalone node; lio:=rko_lio for RKO-LIO
 #   /ugv/<cam>_container     one ZED camera each (component_container_isolated)
 #   /ugv/recorder_container  empty; /bags/start_recording.sh loads the recorder here
 #
@@ -14,7 +14,7 @@
 # Containers respawn by default and their components are reloaded on every start
 # (launch_ros only loads composable_node_descriptions once, so a plain respawn
 # would come back empty). gnocchi publishes a GNSS-only pose while RKO-LIO is
-# down and rebuilds its graph when RKO-LIO returns in its new frame.
+# down and rebuilds its graph when the LIO returns in its new frame.
 
 import os
 from pathlib import Path
@@ -90,28 +90,51 @@ def launch_setup(context, *args, **kwargs):
         LogInfo(msg=f'* lidar_container started (pid {event.pid}); loading Ouster components'),
         LoadComposableNodes(target_container=lidar, composable_node_descriptions=lidar_nodes)])]
 
-    # --- RKO-LIO: its own process, so a LIO crash leaves the lidar driver up --
-    actions.append(Node(
-        package='rko_lio', executable='online_node', name='rko_lio', namespace='ugv', output='screen',
-        respawn=respawn, respawn_delay=respawn_delay,
-        parameters=[{
-            'imu_topic': 'ouster/imu',
-            'lidar_topic': 'ouster/points',
-            'map_topic': '/ugv/rko_lio/local_map',
-            'odom_topic': '/ugv/rko_lio/odometry',
-            'base_frame': 'base_link',
-            'odom_frame': 'odom',
-            'deskew': True,
-            'lidar_frame': 'os_lidar',
-            'imu_frame': 'os_imu',
-            'extrinsic_lidar2base_quat_xyzw_xyz': [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.25],
-            'extrinsic_imu2base_quat_xyzw_xyz': [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.25],
-            'publish_local_map': True,
-            'publish_map_after': 1.0,
-            'publish_lidar_acceleration': False,
-            'invert_odom_tf': False,
-            'mode': 'online',
-        }]))
+    # --- LIO: its own process, so a LIO crash leaves the lidar driver up -------
+    lio = LaunchConfiguration('lio').perform(context)
+    unitree_share = get_package_share_directory('unitree_interface')
+    if lio == 'bievr_lio':
+        # On the field bags BIEVR-LIO held up where RKO-LIO slid (long_road_bad:
+        # 0.37 vs 15.6 m RMS against GNSS) and matched it elsewhere.
+        # Odometry is reported for base_link (gnocchi: topics.odom = bievr_lio/odom).
+        actions.append(Node(
+            package='bievr_lio_ros2', executable='process_topics', name='bievr_lio', namespace='ugv',
+            output='screen', respawn=respawn, respawn_delay=respawn_delay,
+            arguments=['--sensor_config_file', os.path.join(unitree_share, 'config', 'bievr_ugv.yaml'),
+                       '--params_file', os.path.join(unitree_share, 'config', 'bievr_params.yaml')],
+            parameters=[{
+                'topic_namespace': 'ugv/bievr_lio',   # -> /ugv/bievr_lio/odom
+                'base_frame': 'base_link',
+                # os_imu in base_link [x y z qx qy qz qw]: the driver's os_sensor->os_imu
+                # (0.0063, -0.0118, 0.0076), os_sensor 0.25 - 0.0362 m above base_link.
+                'base_to_imu': [0.0063, -0.0118, 0.2214, 0.0, 0.0, 0.0, 1.0],
+                'publish_tf': True,                   # odom -> base_link, as RKO-LIO did
+                'publish_registered_cloud': False,    # full registered scan, ~10 Hz; not used
+            }]))
+    elif lio == 'rko_lio':
+        actions.append(Node(
+            package='rko_lio', executable='online_node', name='rko_lio', namespace='ugv', output='screen',
+            respawn=respawn, respawn_delay=respawn_delay,
+            parameters=[{
+                'imu_topic': 'ouster/imu',
+                'lidar_topic': 'ouster/points',
+                'map_topic': '/ugv/rko_lio/local_map',
+                'odom_topic': '/ugv/rko_lio/odometry',
+                'base_frame': 'base_link',
+                'odom_frame': 'odom',
+                'deskew': True,
+                'lidar_frame': 'os_lidar',
+                'imu_frame': 'os_imu',
+                'extrinsic_lidar2base_quat_xyzw_xyz': [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.25],
+                'extrinsic_imu2base_quat_xyzw_xyz': [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.25],
+                'publish_local_map': True,
+                'publish_map_after': 1.0,
+                'publish_lidar_acceleration': False,
+                'invert_odom_tf': False,
+                'mode': 'online',
+            }]))
+    elif lio != 'none':
+        return [LogInfo(msg=f'Unknown lio:={lio} (bievr_lio, rko_lio or none)')]
 
     # --- Recorder target -------------------------------------------------------
     # Not respawned: a recorder that died should be noticed, not silently replaced
@@ -120,6 +143,7 @@ def launch_setup(context, *args, **kwargs):
 
     # --- ZED cameras: one isolated container each ------------------------------
     zed_launch = os.path.join(zed_wrapper_pkg_dir, 'launch', 'zed_camera.launch.py')
+    zed_override = LaunchConfiguration('zed_params_override').perform(context)
     for i, name in enumerate(names):
         serial = serials[i] if len(serials) == n else '0'
         cam_id = ids[i] if len(ids) == n else '-1'
@@ -147,6 +171,7 @@ def launch_setup(context, *args, **kwargs):
                     'publish_map_tf': publish_tf,
                     'publish_urdf': 'true' if starts['count'] == 1 else 'false',
                     'namespace': 'ugv',
+                    'ros_params_override_path': zed_override,
                 }.items())]
 
         # Staggered startup, as before: opening several GMSL cameras at once is
@@ -174,6 +199,7 @@ def generate_launch_description():
         DeclareLaunchArgument('respawn', default_value='true',
                               description='Restart a crashed sensor process (and reload its components)'),
         DeclareLaunchArgument('respawn_delay', default_value='3.0'),
+        DeclareLaunchArgument('lio', default_value='bievr_lio', description='bievr_lio, rko_lio or none'),
         # After an Argus restart every camera exits at once; reopening only once
         # nvargus-daemon has settled avoids a chain of daemon crashes. Opens are
         # serialized by the ZED wrapper itself (/tmp/zed_open.lock).
@@ -188,5 +214,8 @@ def generate_launch_description():
         DeclareLaunchArgument('cam_ids', default_value=''),
         DeclareLaunchArgument('disable_tf', default_value='False'),
         DeclareLaunchArgument('zed_start_delay', default_value='2.0'),
+        DeclareLaunchArgument('zed_params_override', default_value=os.path.join(
+                                  get_package_share_directory('unitree_interface'), 'config', 'zed_exposure.yaml'),
+                              description='ZED parameter override file (exposure); empty for wrapper defaults'),
         OpaqueFunction(function=launch_setup),
     ])

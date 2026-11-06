@@ -1,0 +1,16 @@
+# BIEVR-LIO sensor config for the UGV Ouster OS-0-128 (2048x10) and its internal IMU.
+# From the driver's /tf_static: os_sensor->os_lidar = Rz(180), t=(0,0,0.0362);
+# os_sensor->os_imu = identity, t=(0.0063,-0.0118,0.0076). Hence T_IMU_LIDAR:
+topics:
+  pointcloud: "/ugv/ouster/points"
+  imu: "/ugv/ouster/imu"
+
+calibration: # T_IMU_LIDAR (LiDAR -> IMU)
+  translation: [-0.0063, 0.0118, 0.0286]
+  rotation: [-1, 0, 0,
+             0, -1, 0,
+             0, 0, 1]
+
+lidar:
+  min_range_m: 1.0 # robot body
+  max_range_m: 100
